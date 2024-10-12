@@ -31,6 +31,12 @@ local function on_attach(client, bufnr)
 end
 
 require('lspconfig').ts_ls.setup({
+  -- Remove three line if you don't need swift lsp
+  -- Swift LSP 
+  cmd = {"sourcekit-lsp"},
+  filetypes = { "swift", "objective-c", "objective-cpp" },  -- Supported file types
+  root_dir = require('lspconfig').util.root_pattern("Package.swift", ".git"),
+  -- swift lsp --
   on_attach = function(client, bufnr)
     lsp_zero.default_keymaps({ buffer = bufnr })
   end
