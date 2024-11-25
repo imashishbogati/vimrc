@@ -74,6 +74,14 @@ vim.keymap.set('n', 'ge', vim.diagnostic.open_float,
 -- Fun command: Make it rain using CellularAutomaton
 vim.keymap.set("n", "<leader>mr", "<cmd>CellularAutomaton make_it_rain<CR>")
 
+-- Go To next error in buffer
+vim.keymap.set("n", "<leader>ne", "<cmd>lua vim.diagnostic.goto_next({severity = vim.diagnostic.severity.ERROR})<CR>zz",
+  { noremap = true, silent = true, desc = "Go to next error" })
+
+-- Go To prev error in buffer
+vim.keymap.set("n", "<leader>pe", "<cmd>lua vim.diagnostic.goto_prev({severity = vim.diagnostic.severity.ERROR})<CR>zz",
+  { noremap = true, silent = true, desc = "Go to previous error" })
+
 -- Source the current Vim configuration file
 vim.keymap.set("n", "<leader><leader>", function()
   vim.cmd("so")
