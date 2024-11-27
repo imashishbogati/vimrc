@@ -16,6 +16,7 @@ require('mason-lspconfig').setup({
     "rust_analyzer",         -- Rust language server
     "tailwindcss",           -- Tailwind CSS language server
     "ts_ls",                 -- TypeScript/JavaScript language server (corrected name)
+    "intelephense",
   },
   handlers = {
     lsp_zero.default_setup,
@@ -95,6 +96,10 @@ require('lspconfig').pylsp.setup({
 })
 
 require('lspconfig').tailwindcss.setup({
+  on_attach = on_attach
+})
+
+require('lspconfig').intelephense.setup({
   on_attach = on_attach
 })
 
