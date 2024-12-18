@@ -100,7 +100,18 @@ require('lspconfig').tailwindcss.setup({
 })
 
 require('lspconfig').intelephense.setup({
-  on_attach = on_attach
+  on_attach = on_attach,
+  root_dir = function(fname)
+    local root = require('lspconfig.util').root_pattern('index.php')(fname)
+    return root or require('lspconfig.util').path.dirname(fname)
+  end,
+  settings = {
+    intelephense = {
+      files = {
+        maxSize = 5000000
+      }
+    }
+  }
 })
 
 lsp_zero.setup()
