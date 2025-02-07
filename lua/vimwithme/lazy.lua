@@ -1,6 +1,7 @@
--- This file can be loaded by calling `lua require('plugins')` from your init.vim
+-- plugins.lua
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
+vim.g.python3_host_prog = '/opt/homebrew/bin/python3'
 
 -- Bootstrap lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -16,11 +17,9 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
--- Set leader key before lazy setup
-
 -- Plugin configuration
 require('lazy').setup({
-  -- Existing plugins...
+  -- Your existing plugins
   {
     'numToStr/Comment.nvim',
     config = function()
@@ -51,6 +50,7 @@ require('lazy').setup({
     end
   },
   { 'nvim-lua/plenary.nvim' },
+  { 'nvim-neotest/nvim-nio' },
   {
     'ThePrimeagen/harpoon',
     branch = 'harpoon2',
@@ -61,7 +61,6 @@ require('lazy').setup({
   },
   { 'mbbill/undotree' },
   { 'tpope/vim-fugitive' },
-
   {
     'VonHeikemen/lsp-zero.nvim',
     branch = 'v3.x',
@@ -109,6 +108,81 @@ require('lazy').setup({
     end,
     opts = {}
   },
+
+  -- Jupyter Notebook Integration with Molten
+  {
+    "benlubas/molten-nvim",
+    version = "^1.0.0", -- use version <2.0.0 to avoid breaking changes
+    build = ":UpdateRemotePlugins",
+    init = function()
+      -- this is an example, not a default. Please see the readme for more configuration options
+      vim.g.molten_output_win_max_height = 12
+    end,
+  },
+
+  -- Markdown preview for documentation
+  {
+    'iamcco/markdown-preview.nvim',
+    ft = { 'markdown' },
+    build = function()
+      vim.fn.system('cd app && npx --yes yarn install')
+    end,
+    cmd = { 'MarkdownPreview' },
+    config = function()
+      vim.g.mkdp_auto_start = 0
+      vim.g.mkdp_auto_close = 1
+      vim.g.mkdp_refresh_slow = 0
+    end,
+  },
+
+  -- Debugging support
+  {
+    'rcarriga/nvim-dap-ui',
+    dependencies = {
+      'mfussenegger/nvim-dap',
+      'mfussenegger/nvim-dap-python',
+      'nvim-neotest/nvim-nio',
+    },
+    config = function()
+      local dap = require('dap')
+      local dapui = require('dapui')
+
+      dapui.setup()
+      require('dap-python').setup('python')
+
+      dap.listeners.after.event_initialized["dapui_config"] = function()
+        dapui.open()
+      end
+      dap.listeners.before.event_terminated["dapui_config"] = function()
+        dapui.close()
+      end
+      dap.listeners.before.event_exited["dapui_config"] = function()
+        dapui.close()
+      end
+    end
+  },
+
+  -- Testing framework
+  {
+    'nvim-neotest/neotest',
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'nvim-treesitter/nvim-treesitter',
+      'antoinemadec/FixCursorHold.nvim',
+      'nvim-neotest/neotest-python',
+      'nvim-neotest/nvim-nio',
+    },
+    config = function()
+      require('neotest').setup({
+        adapters = {
+          require('neotest-python')({
+            dap = { justMyCode = false },
+            pytest_discovery = true,
+          }),
+        },
+      })
+    end
+  },
 }, {
   install = {
     colorscheme = { "rose-pine" }
@@ -121,7 +195,6 @@ require('lazy').setup({
     notify = false,
   },
 })
-
 
 -- Load additional configurations
 require('vimwithme.set')
@@ -136,5 +209,51 @@ vim.api.nvim_create_autocmd("FileType", {
   callback = function()
     vim.opt_local.tabstop = 2
     vim.opt_local.shiftwidth = 2
+  end,
+})
+
+-- Python Development specific settings
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "python",
+  callback = function()
+    -- Indentation settings
+    vim.opt_local.expandtab = true
+    vim.opt_local.shiftwidth = 4
+    vim.opt_local.tabstop = 4
+    vim.opt_local.softtabstop = 4
+
+    -- Python keymaps
+    local opts = { buffer = true, silent = true }
+
+    -- Molten keymaps
+    vim.keymap.set('n', '<leader>mi', ':MoltenInit<CR>', opts)
+    vim.keymap.set('n', '<leader>me', ':MoltenEvaluateOperator<CR>', opts)
+    vim.keymap.set('n', '<leader>ml', ':MoltenEvaluateLine<CR>', opts)
+    vim.keymap.set('v', '<leader>me', ':<C-u>MoltenEvaluateVisual<CR>gv', opts)
+    vim.keymap.set('n', '<leader>mr', ':MoltenRestart<CR>', opts)
+    vim.keymap.set('n', '<leader>mo', ':MoltenShowOutput<CR>', opts)
+    vim.keymap.set('n', '<leader>mh', ':MoltenHideOutput<CR>', opts)
+    vim.keymap.set('n', '<leader>md', ':MoltenDelete<CR>', opts)
+    vim.keymap.set('n', '<leader>mn', ':MoltenImportOutput<CR>', opts)
+
+    -- Testing
+    vim.keymap.set('n', '<leader>pt', ':lua require("neotest").run.run()<CR>', opts)
+
+    -- Debugging
+    vim.keymap.set('n', '<leader>db', ':lua require("dap").toggle_breakpoint()<CR>', opts)
+    vim.keymap.set('n', '<leader>dc', ':lua require("dap").continue()<CR>', opts)
+    vim.keymap.set('n', '<leader>do', ':lua require("dap").step_over()<CR>', opts)
+    vim.keymap.set('n', '<leader>di', ':lua require("dap").step_into()<CR>', opts)
+    vim.keymap.set('n', '<leader>dr', ':lua require("dap").repl.open()<CR>', opts)
+  end,
+})
+
+-- Additional keymaps for markdown preview
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "markdown",
+  callback = function()
+    local opts = { buffer = true, silent = true }
+    vim.keymap.set('n', '<leader>mp', ':MarkdownPreview<CR>', opts)
+    vim.keymap.set('n', '<leader>ms', ':MarkdownPreviewStop<CR>', opts)
   end,
 })

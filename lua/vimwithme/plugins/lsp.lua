@@ -17,6 +17,7 @@ require('mason-lspconfig').setup({
     "tailwindcss",           -- Tailwind CSS language server
     "ts_ls",                 -- TypeScript/JavaScript language server (corrected name)
     "intelephense",
+    "zls",
   },
   handlers = {
     lsp_zero.default_setup,
@@ -99,7 +100,7 @@ require('lspconfig').tailwindcss.setup({
   on_attach = on_attach
 })
 
-require('lspconfig').intelephense.setup({
+--[[ require('lspconfig').intelephense.setup({
   on_attach = on_attach,
   root_dir = function(fname)
     local root = require('lspconfig.util').root_pattern('index.php')(fname)
@@ -112,6 +113,79 @@ require('lspconfig').intelephense.setup({
       }
     }
   }
+}) ]]
+
+local function php_on_attach(client, bufnr)
+  if vim.bo[bufnr].filetype ~= "php" then
+    return
+  end
+
+  local opts = { noremap = true, silent = true, buffer = bufnr }
+
+  vim.keymap.set('n', 'gd', function()
+    vim.lsp.buf.definition()
+  end, opts)
+
+  vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+  vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
+  vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
+  vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
+  vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
+
+  if client.server_capabilities.documentFormattingProvider then
+    vim.api.nvim_create_autocmd("BufWritePre", {
+      buffer = bufnr,
+      callback = function()
+        vim.lsp.buf.format({ bufnr = bufnr })
+      end,
+    })
+  end
+end
+
+require('lspconfig').intelephense.setup({
+  on_attach = php_on_attach,
+  root_dir = function(fname)
+    return require('lspconfig.util').root_pattern(
+      'composer.json',
+      'artisan',
+      '.git',
+      'index.php'
+    )(fname) or require('lspconfig.util').path.dirname(fname)
+  end,
+  filetypes = { "php" },
+  settings = {
+    intelephense = {
+      files = {
+        maxSize = 5000000,
+        associations = { "*.php" },
+      },
+      environment = {
+        includePaths = { 'vendor' },
+      },
+      stubs = {
+        "apache", "bcmath", "bz2", "calendar", "com_dotnet", "Core", "ctype", "curl",
+        "date", "dba", "dom", "enchant", "exif", "fileinfo", "filter", "fpm", "ftp",
+        "gd", "hash", "iconv", "imap", "interbase", "intl", "json", "ldap", "libxml",
+        "mbstring", "mcrypt", "meta", "mssql", "mysqli", "oci8", "odbc", "openssl",
+        "pcntl", "pcre", "PDO", "pdo_ibm", "pdo_mysql", "pdo_pgsql", "pdo_sqlite",
+        "pgsql", "Phar", "posix", "pspell", "readline", "recode", "Reflection",
+        "session", "shmop", "SimpleXML", "snmp", "soap", "sockets", "sodium", "SPL",
+        "sqlite3", "standard", "superglobals", "sybase", "sysvmsg", "sysvsem",
+        "sysvshm", "tidy", "tokenizer", "xml", "xmlreader", "xmlrpc", "xmlwriter",
+        "xsl", "Zend OPcache", "zip", "zlib"
+      },
+      completion = {
+        insertUseDeclaration = true,
+        fullyQualifyGlobalConstantsAndFunctions = true,
+      },
+      diagnostics = {
+        enable = true,
+      },
+      format = {
+        enable = true,
+      },
+    },
+  },
 })
 
 lsp_zero.setup()

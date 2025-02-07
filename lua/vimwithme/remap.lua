@@ -2,6 +2,7 @@ vim.g.mapleader = " " -- Set leader key to space
 
 -- Map <leader>lg to open Lazygit
 vim.keymap.set('n', '<leader>lg', ':LazyGit<CR>', { noremap = true, silent = true })
+vim.keymap.set('n', '<leader>tt', ':lua require("iron").send_marked()<CR>', { noremap = true, silent = true })
 
 -- Open NetRW file explorer (Go Back in the directory structure)
 vim.keymap.set("n", "<leader>pv", vim.cmd.Ex)
